@@ -9,7 +9,8 @@ formats data from xml into excel file
 #imports
 import xlsxwriter
 import xmlmethods
-
+import xlrd
+from collections import Counter
 #helper functions to get rid of duplicates in dictionaries/lists.
 def consolidatedictionary(input_raw):
     result = {}
@@ -127,6 +128,38 @@ for name, value in data_to_enter.items():
 
 
     count += 1
+
+
+
+
+
+book = xlrd.open_workbook('xmldata.xlsx')
+datasheet = book.sheet_by_index(0)
+
+def makepiechart(chartname, col, location):
+    chartsheet = workbook.add_worksheet()
+    data = []
+    for row in range(2, datasheet.nrows):
+        data.append(datasheet.cell(row, col).value)
+    datacounts = Counter(data)
+    for name, value in datacounts.items():
+        datacounts[name] = 100 * (value / (datasheet.nrows - 2))
+    chartsheet.write_column('A1', datacounts.keys())
+    chartsheet.write_column('B1', datacounts.values())
+    chart1 = workbook.add_chart({'type': 'pie'})
+    chart1.add_series({
+        'name': 'Delimeter Types',
+        'categories': ['Sheet' + location, 0, 0, len(datacounts.keys()) - 1, 0],
+        'values': ['Sheet' + location, 0, 1, len(datacounts.keys()) - 1, 1]
+    })
+    chart1.set_title({'name': chartname})
+    chart1.set_size({'x_scale': 1.5, 'y_scale': 2})
+    chartsheet.insert_chart("C2", chart1)
+
+makepiechart("Delimiter Breakdown", 2, "2")
+makepiechart("Result Type Breakdown", 12, "3")
+
+
 workbook.close() #closing workbook
 print("done")
 
